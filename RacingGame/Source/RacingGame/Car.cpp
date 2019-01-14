@@ -23,7 +23,11 @@ void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector NewLocation = ForwardVelocity * DeltaTime * 100;
+	FVector Acceleration = Force / Mass;
+
+	Velocity = Velocity + (Acceleration * DeltaTime);
+
+	FVector NewLocation = Velocity * DeltaTime * 100;
 	AddActorWorldOffset(NewLocation);
 
 }
@@ -35,8 +39,8 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::MoveForward);
 }
 
-void ACar::MoveForward(float Velocity)
+void ACar::MoveForward(float Value)
 {
-	ForwardVelocity = GetActorForwardVector() * 20 * Velocity;
+	Force = GetActorForwardVector() * Value * AccelerationScalar;
 }
 

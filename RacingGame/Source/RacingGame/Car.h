@@ -26,9 +26,16 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	void MoveForward(float Velocity);
-
 private:
-	FVector ForwardVelocity;
+	void MoveForward(float Value);
+
+	FVector Velocity;
+	FVector Force;
+
+	UPROPERTY(EditAnywhere)
+	float Mass = 1000;
+
+	UPROPERTY(EditAnywhere)
+	float AccelerationScalar = 1000;
 	
 };
