@@ -27,8 +27,16 @@ void ACar::Tick(float DeltaTime)
 
 	Velocity = Velocity + (Acceleration * DeltaTime);
 
+	float RotationAngle = MaxTurningSpeed * DeltaTime * SteeringThrow;
+	FQuat NewRotation(GetActorUpVector(), FMath::DegreesToRadians(RotationAngle));
+	AddActorLocalRotation(NewRotation);
+	Velocity = NewRotation.RotateVector(Velocity);
+
 	FVector NewLocation = Velocity * DeltaTime * 100;
-	AddActorWorldOffset(NewLocation);
+
+	FHitResult HitResult = FHitResult();
+	AddActorWorldOffset(NewLocation, true, &HitResult);
+	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
 
 }
 
@@ -37,6 +45,7 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ACar::MoveRight);
 }
 
 void ACar::MoveForward(float Value)
@@ -44,3 +53,7 @@ void ACar::MoveForward(float Value)
 	Force = GetActorForwardVector() * Value * AccelerationScalar;
 }
 
+void ACar::MoveRight(float Value)
+{
+	SteeringThrow = Value;
+}

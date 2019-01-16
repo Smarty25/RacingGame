@@ -28,9 +28,11 @@ public:
 
 private:
 	void MoveForward(float Value);
+	void MoveRight(float Value);
 
 	FVector Velocity;
 	FVector Force;
+	float SteeringThrow;
 
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000;
@@ -38,4 +40,6 @@ private:
 	UPROPERTY(EditAnywhere)
 	float AccelerationScalar = 1000;
 	
+	UPROPERTY(EditAnywhere)
+	float MaxTurningSpeed = 90;
 };
