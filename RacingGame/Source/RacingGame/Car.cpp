@@ -23,8 +23,12 @@ void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector Acceleration = Force / Mass;
+	FVector DragForce = GetActorForwardVector() * -1 * FMath::Square(Velocity.Size()) * DragCoefficient;
+	Force = Force + DragForce;
+	UE_LOG(LogTemp, Warning, TEXT("Force = %f"), Force.Size());
 
+	FVector Acceleration = Force / Mass;
+	
 	Velocity = Velocity + (Acceleration * DeltaTime);
 
 	float RotationAngle = MaxTurningSpeed * DeltaTime * SteeringThrow;

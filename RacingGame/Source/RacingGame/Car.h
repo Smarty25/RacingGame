@@ -39,6 +39,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float AccelerationScalar = 1000;
+
+	UPROPERTY(EditAnywhere)
+	float DragCoefficient = 1;
 	
 	UPROPERTY(EditAnywhere)
 	float MaxTurningSpeed = 90;
