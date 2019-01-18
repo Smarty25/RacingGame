@@ -2,6 +2,7 @@
 
 #include "Car.h"
 #include "Components/InputComponent.h"
+#include "Engine/World.h"
 
 // Sets default values
 ACar::ACar()
@@ -23,9 +24,10 @@ void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector DragForce = GetActorForwardVector() * -1 * FMath::Square(Velocity.Size()) * DragCoefficient;
-	Force = Force + DragForce;
-	UE_LOG(LogTemp, Warning, TEXT("Force = %f"), Force.Size());
+	FVector DragForce = -Velocity.GetSafeNormal() * FMath::Square(Velocity.Size()) * DragCoefficient;
+	float NormalForce = -(GetWorld()->GetGravityZ() / 100 * Mass);
+	FVector FrictionForce = -Velocity.GetSafeNormal() * NormalForce * FrictionCoefficient;
+	Force = Force + DragForce + FrictionForce;
 
 	FVector Acceleration = Force / Mass;
 	
