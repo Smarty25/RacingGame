@@ -33,8 +33,8 @@ void ACar::Tick(float DeltaTime)
 	
 	Velocity = Velocity + (Acceleration * DeltaTime);
 
-	float RotationAngle = MaxTurningSpeed * DeltaTime * SteeringThrow;
-	FQuat NewRotation(GetActorUpVector(), FMath::DegreesToRadians(RotationAngle));
+	float RotationAngle = (FVector::DotProduct(GetActorForwardVector(), Velocity) * DeltaTime) / TurningRadius * SteeringThrow;
+	FQuat NewRotation(GetActorUpVector(), RotationAngle);
 	AddActorLocalRotation(NewRotation);
 	Velocity = NewRotation.RotateVector(Velocity);
 

@@ -47,5 +47,5 @@ private:
 	float FrictionCoefficient = 1;
 	
 	UPROPERTY(EditAnywhere)
-	float MaxTurningSpeed = 90;
+	float TurningRadius = 90;
 };
