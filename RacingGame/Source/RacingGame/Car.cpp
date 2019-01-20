@@ -50,16 +50,40 @@ void ACar::Tick(float DeltaTime)
 void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ACar::MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::Server_MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ACar::Server_MoveRight);
 }
 
-void ACar::MoveForward(float Value)
+void ACar::Server_MoveForward_Implementation(float Value)
 {
 	Force = GetActorForwardVector() * Value * AccelerationScalar;
 }
 
-void ACar::MoveRight(float Value)
+bool ACar::Server_MoveForward_Validate(float Value)
+{
+	if (FMath::Abs(Value) <= .5)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+void ACar::Server_MoveRight_Implementation(float Value)
 {
 	SteeringThrow = Value;
+}
+
+bool ACar::Server_MoveRight_Validate(float Value)
+{
+	if (FMath::Abs(Value) <= 1)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
