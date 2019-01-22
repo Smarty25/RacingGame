@@ -3,6 +3,7 @@
 #include "Car.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 ACar::ACar()
@@ -19,10 +20,29 @@ void ACar::BeginPlay()
 	
 }
 
+FString GetEnumText(ENetRole Role)
+{
+	switch (Role)
+	{
+	case ROLE_None:
+		return "None";
+	case ROLE_SimulatedProxy:
+		return "SimulatedProxy";
+	case ROLE_AutonomousProxy:
+		return "AutonomousProxy";
+	case ROLE_Authority:
+		return "Authority";
+	default:
+		return "ERROR";
+	}
+}
+
 // Called every frame
 void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	FVector Force = GetActorForwardVector() * ForwardThrow * AccelerationScalar;
 
 	FVector DragForce = -Velocity.GetSafeNormal() * FMath::Square(Velocity.Size()) * DragCoefficient;
 	float NormalForce = -(GetWorld()->GetGravityZ() / 100 * Mass);
@@ -44,24 +64,39 @@ void ACar::Tick(float DeltaTime)
 	AddActorWorldOffset(NewLocation, true, &HitResult);
 	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
 
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 }
 
 // Called to bind functionality to input
 void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::Server_MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &ACar::Server_MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ACar::Client_MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ACar::Client_MoveRight);
+}
+
+void ACar::Client_MoveForward(float Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client_MoveForward Value = %f"), Value);
+	ForwardThrow = Value;
+	Server_MoveForward(Value);
+}
+
+void ACar::Client_MoveRight(float Value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Client_MoveRight Value = %f"), Value);
+	SteeringThrow = Value;
+	Server_MoveRight(Value);
 }
 
 void ACar::Server_MoveForward_Implementation(float Value)
 {
-	Force = GetActorForwardVector() * Value * AccelerationScalar;
+	ForwardThrow = Value;
 }
 
 bool ACar::Server_MoveForward_Validate(float Value)
 {
-	if (FMath::Abs(Value) <= .5)
+	if (FMath::Abs(Value) <= 1)
 	{
 		return true;
 	}

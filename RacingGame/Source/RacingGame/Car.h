@@ -32,22 +32,25 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveRight(float Value);
 
+	void Client_MoveForward(float Value);
+	void Client_MoveRight(float Value);
+
 	FVector Velocity;
-	FVector Force;
+	float ForwardThrow;
 	float SteeringThrow;
 
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000;
 
 	UPROPERTY(EditAnywhere)
-	float AccelerationScalar = 1000;
+	float AccelerationScalar = 10000;
 
 	UPROPERTY(EditAnywhere)
 	float DragCoefficient = 2;
 
 	UPROPERTY(EditAnywhere)
-	float FrictionCoefficient = 1;
+	float FrictionCoefficient = .3;
 	
 	UPROPERTY(EditAnywhere)
-	float TurningRadius = 90;
+	float TurningRadius = 10;
 };
