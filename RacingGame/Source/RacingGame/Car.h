@@ -36,6 +36,12 @@ private:
 	void Client_MoveRight(float Value);
 
 	FVector Velocity;
+
+	UPROPERTY(Replicated)
+	FVector ReplicatedLocation;
+	UPROPERTY(Replicated)
+	FRotator ReplicatedRotation;
+
 	float ForwardThrow;
 	float SteeringThrow;
 

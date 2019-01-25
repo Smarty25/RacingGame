@@ -4,13 +4,14 @@
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
+#include "UnrealNetwork.h"
 
 // Sets default values
 ACar::ACar()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	//bReplicates = true;
 }
 
 // Called when the game starts or when spawned
@@ -18,6 +19,14 @@ void ACar::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ACar::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ACar, ReplicatedLocation);
+	DOREPLIFETIME(ACar, ReplicatedRotation);
 }
 
 FString GetEnumText(ENetRole Role)
@@ -64,6 +73,17 @@ void ACar::Tick(float DeltaTime)
 	AddActorWorldOffset(NewLocation, true, &HitResult);
 	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
 
+	if (HasAuthority())
+	{
+		ReplicatedLocation = GetActorLocation();
+		ReplicatedRotation = GetActorRotation();
+	}
+
+	if (!HasAuthority())
+	{
+		SetActorLocationAndRotation(ReplicatedLocation, ReplicatedRotation);
+	}
+
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 }
 
@@ -77,14 +97,14 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void ACar::Client_MoveForward(float Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Client_MoveForward Value = %f"), Value);
+	//UE_LOG(LogTemp, Warning, TEXT("Client_MoveForward Value = %f"), Value);
 	ForwardThrow = Value;
 	Server_MoveForward(Value);
 }
 
 void ACar::Client_MoveRight(float Value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Client_MoveRight Value = %f"), Value);
+	//UE_LOG(LogTemp, Warning, TEXT("Client_MoveRight Value = %f"), Value);
 	SteeringThrow = Value;
 	Server_MoveRight(Value);
 }
