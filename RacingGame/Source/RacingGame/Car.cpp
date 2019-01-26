@@ -18,15 +18,14 @@ ACar::ACar()
 void ACar::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	if (HasAuthority()) { NetUpdateFrequency = 1; }
 }
 
 void ACar::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ACar, ReplicatedLocation);
-	DOREPLIFETIME(ACar, ReplicatedRotation);
+	DOREPLIFETIME(ACar, ReplicatedTransform);
 }
 
 FString GetEnumText(ENetRole Role)
@@ -75,16 +74,16 @@ void ACar::Tick(float DeltaTime)
 
 	if (HasAuthority())
 	{
-		ReplicatedLocation = GetActorLocation();
-		ReplicatedRotation = GetActorRotation();
-	}
-
-	if (!HasAuthority())
-	{
-		SetActorLocationAndRotation(ReplicatedLocation, ReplicatedRotation);
+		ReplicatedTransform = GetActorTransform();
 	}
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+}
+
+void ACar::OnRep_ReplicatedTransform()
+{
+	SetActorTransform(ReplicatedTransform);
+	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
 // Called to bind functionality to input
