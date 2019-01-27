@@ -35,6 +35,7 @@ private:
 	void Client_MoveForward(float Value);
 	void Client_MoveRight(float Value);
 
+	UPROPERTY(Replicated)
 	FVector Velocity;
 
 	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
@@ -43,7 +44,10 @@ private:
 	UFUNCTION()
 	void OnRep_ReplicatedTransform();
 
+	UPROPERTY(Replicated)
 	float ForwardThrow;
+
+	UPROPERTY(Replicated)
 	float SteeringThrow;
 
 	UPROPERTY(EditAnywhere)

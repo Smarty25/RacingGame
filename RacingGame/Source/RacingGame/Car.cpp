@@ -26,6 +26,9 @@ void ACar::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ACar, ReplicatedTransform);
+	DOREPLIFETIME(ACar, Velocity);
+	DOREPLIFETIME(ACar, ForwardThrow);
+	DOREPLIFETIME(ACar, SteeringThrow);
 }
 
 FString GetEnumText(ENetRole Role)
