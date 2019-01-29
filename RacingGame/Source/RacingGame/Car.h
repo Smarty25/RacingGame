@@ -6,6 +6,39 @@
 #include "GameFramework/Pawn.h"
 #include "Car.generated.h"
 
+USTRUCT()
+struct FCarMove
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	float ForwardThrow;
+
+	UPROPERTY()
+	float SteeringThrow;
+
+	UPROPERTY()
+	float DeltaTime;
+
+	UPROPERTY()
+	float Time;
+};
+
+USTRUCT()
+struct FCarState
+{
+	GENERATED_USTRUCT_BODY()
+
+	UPROPERTY()
+	FCarMove LastMove;
+
+	UPROPERTY()
+	FTransform Transform;
+
+	UPROPERTY()
+	FVector Velocity;
+};
+
 UCLASS()
 class RACINGGAME_API ACar : public APawn
 {
