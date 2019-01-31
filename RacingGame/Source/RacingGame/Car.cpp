@@ -25,10 +25,9 @@ void ACar::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeP
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ACar, ReplicatedTransform);
-	DOREPLIFETIME(ACar, Velocity);
-	DOREPLIFETIME(ACar, ForwardThrow);
-	DOREPLIFETIME(ACar, SteeringThrow);
+	DOREPLIFETIME(ACar, ServerState);
+	//DOREPLIFETIME(ACar, ForwardThrow);
+	//DOREPLIFETIME(ACar, SteeringThrow);
 }
 
 FString GetEnumText(ENetRole Role)
@@ -53,8 +52,18 @@ void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FVector Force = GetActorForwardVector() * ForwardThrow * AccelerationScalar;
+	if (IsLocallyControlled())
+	{
+		FCarMove Move;
+		Move.DeltaTime = DeltaTime;
+		Move.ForwardThrow = ForwardThrow;
+		Move.SteeringThrow = SteeringThrow;
+		//Move.Time = TODO;
 
+		Server_SendMove(Move);
+	}
+
+	FVector Force = GetActorForwardVector() * ForwardThrow * AccelerationScalar;
 	FVector DragForce = -Velocity.GetSafeNormal() * FMath::Square(Velocity.Size()) * DragCoefficient;
 	float NormalForce = -(GetWorld()->GetGravityZ() / 100 * Mass);
 	FVector FrictionForce = -Velocity.GetSafeNormal() * NormalForce * FrictionCoefficient;
@@ -77,15 +86,18 @@ void ACar::Tick(float DeltaTime)
 
 	if (HasAuthority())
 	{
-		ReplicatedTransform = GetActorTransform();
+		ServerState.Transform = GetActorTransform();
+		ServerState.Velocity = Velocity;
+		//ServerState.LastMove = //TODO
 	}
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 }
 
-void ACar::OnRep_ReplicatedTransform()
+void ACar::OnRep_ServerState()
 {
-	SetActorTransform(ReplicatedTransform);
+	SetActorTransform(ServerState.Transform);
+	Velocity = ServerState.Velocity;
 	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
@@ -100,47 +112,25 @@ void ACar::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void ACar::Client_MoveForward(float Value)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("Client_MoveForward Value = %f"), Value);
+	Value = FMath::Clamp<float>(Value, -1, 1);
 	ForwardThrow = Value;
-	Server_MoveForward(Value);
 }
 
 void ACar::Client_MoveRight(float Value)
 {
 	//UE_LOG(LogTemp, Warning, TEXT("Client_MoveRight Value = %f"), Value);
-	SteeringThrow = Value;
-	Server_MoveRight(Value);
-}
-
-void ACar::Server_MoveForward_Implementation(float Value)
-{
-	ForwardThrow = Value;
-}
-
-bool ACar::Server_MoveForward_Validate(float Value)
-{
-	if (FMath::Abs(Value) <= 1)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void ACar::Server_MoveRight_Implementation(float Value)
-{
+	Value = FMath::Clamp<float>(Value, -1, 1);
 	SteeringThrow = Value;
 }
 
-bool ACar::Server_MoveRight_Validate(float Value)
+void ACar::Server_SendMove_Implementation(FCarMove Move)
 {
-	if (FMath::Abs(Value) <= 1)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	ForwardThrow = Move.ForwardThrow;
+	SteeringThrow = Move.SteeringThrow;
+}
+
+bool ACar::Server_SendMove_Validate(FCarMove Move)
+{
+	//TODO validate move
+	return true;
 }

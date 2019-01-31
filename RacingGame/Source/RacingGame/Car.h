@@ -61,28 +61,24 @@ public:
 
 private:
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveForward(float Value);
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveRight(float Value);
+	void Server_SendMove(FCarMove Move);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
+	FCarState ServerState;
+
+	FVector Velocity;
 
 	void Client_MoveForward(float Value);
 	void Client_MoveRight(float Value);
 
-	UPROPERTY(Replicated)
-	FVector Velocity;
-
-	UPROPERTY(ReplicatedUsing = OnRep_ReplicatedTransform)
-	FTransform ReplicatedTransform;
-
 	UFUNCTION()
-	void OnRep_ReplicatedTransform();
+	void OnRep_ServerState();
 
-	UPROPERTY(Replicated)
 	float ForwardThrow;
 
-	UPROPERTY(Replicated)
 	float SteeringThrow;
 
+	//Car Properties
 	UPROPERTY(EditAnywhere)
 	float Mass = 1000;
 
