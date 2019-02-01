@@ -58,13 +58,34 @@ void ACar::Tick(float DeltaTime)
 		Move.DeltaTime = DeltaTime;
 		Move.ForwardThrow = ForwardThrow;
 		Move.SteeringThrow = SteeringThrow;
-		//Move.Time = TODO;
+		Move.Time = GetWorld()->TimeSeconds;
+
+		if (!HasAuthority())
+		{
+			UnacknowledgedMoves.Add(Move);
+			UE_LOG(LogTemp, Warning, TEXT("UnacknowledgedMoves Count = %d"), UnacknowledgedMoves.Num());
+		}
 
 		Server_SendMove(Move);
 		SimulateMove(Move);
 	}
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+}
+
+void ACar::ClearAcknowledgedMoves(FCarMove LastMove)
+{
+	TArray<FCarMove> NewMoves;
+
+	for (const FCarMove& Move : UnacknowledgedMoves)
+	{
+		if (Move.Time >= LastMove.Time)
+		{
+			NewMoves.Add(Move);
+		}
+	}
+
+	UnacknowledgedMoves = NewMoves;
 }
 
 void ACar::CheckCollision(const FVector &NewLocation)
@@ -99,6 +120,8 @@ void ACar::OnRep_ServerState()
 {
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
+
+	ClearAcknowledgedMoves(ServerState.LastMove);
 	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
