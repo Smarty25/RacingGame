@@ -61,8 +61,29 @@ void ACar::Tick(float DeltaTime)
 		//Move.Time = TODO;
 
 		Server_SendMove(Move);
+		SimulateMove(Move);
 	}
 
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
+}
+
+void ACar::CheckCollision(const FVector &NewLocation)
+{
+	FHitResult HitResult = FHitResult();
+	AddActorWorldOffset(NewLocation, true, &HitResult);
+	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
+}
+
+void ACar::CalculateRotation(float DeltaTime, float SteeringThrow)
+{
+	float RotationAngle = (FVector::DotProduct(GetActorForwardVector(), Velocity) * DeltaTime) / TurningRadius * SteeringThrow;
+	FQuat NewRotation(GetActorUpVector(), RotationAngle);
+	AddActorLocalRotation(NewRotation);
+	Velocity = NewRotation.RotateVector(Velocity);
+}
+
+void ACar::CalculateVelocity(float DeltaTime, float ForwardThrow)
+{
 	FVector Force = GetActorForwardVector() * ForwardThrow * AccelerationScalar;
 	FVector DragForce = -Velocity.GetSafeNormal() * FMath::Square(Velocity.Size()) * DragCoefficient;
 	float NormalForce = -(GetWorld()->GetGravityZ() / 100 * Mass);
@@ -70,28 +91,8 @@ void ACar::Tick(float DeltaTime)
 	Force = Force + DragForce + FrictionForce;
 
 	FVector Acceleration = Force / Mass;
-	
+
 	Velocity = Velocity + (Acceleration * DeltaTime);
-
-	float RotationAngle = (FVector::DotProduct(GetActorForwardVector(), Velocity) * DeltaTime) / TurningRadius * SteeringThrow;
-	FQuat NewRotation(GetActorUpVector(), RotationAngle);
-	AddActorLocalRotation(NewRotation);
-	Velocity = NewRotation.RotateVector(Velocity);
-
-	FVector NewLocation = Velocity * DeltaTime * 100;
-
-	FHitResult HitResult = FHitResult();
-	AddActorWorldOffset(NewLocation, true, &HitResult);
-	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
-
-	if (HasAuthority())
-	{
-		ServerState.Transform = GetActorTransform();
-		ServerState.Velocity = Velocity;
-		//ServerState.LastMove = //TODO
-	}
-
-	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
 }
 
 void ACar::OnRep_ServerState()
@@ -99,6 +100,19 @@ void ACar::OnRep_ServerState()
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
 	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
+}
+
+void ACar::SimulateMove(FCarMove Move)
+{
+	float DeltaTime = Move.DeltaTime;
+
+	CalculateVelocity(DeltaTime, Move.ForwardThrow);
+
+	CalculateRotation(DeltaTime, Move.SteeringThrow);
+
+	FVector NewLocation = Velocity * DeltaTime * 100;
+
+	CheckCollision(NewLocation);
 }
 
 // Called to bind functionality to input
@@ -125,8 +139,11 @@ void ACar::Client_MoveRight(float Value)
 
 void ACar::Server_SendMove_Implementation(FCarMove Move)
 {
-	ForwardThrow = Move.ForwardThrow;
-	SteeringThrow = Move.SteeringThrow;
+	SimulateMove(Move);
+	
+	ServerState.LastMove = Move;
+	ServerState.Transform = GetActorTransform();
+	ServerState.Velocity = Velocity;
 }
 
 bool ACar::Server_SendMove_Validate(FCarMove Move)

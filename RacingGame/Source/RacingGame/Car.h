@@ -56,10 +56,18 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	void CheckCollision(const FVector &NewLocation);
+
+	void CalculateRotation(float DeltaTime, float SteeringThrow);
+
+	void CalculateVelocity(float DeltaTime, float ForwardThrow);
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	void SimulateMove(FCarMove Move);
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(FCarMove Move);
 
