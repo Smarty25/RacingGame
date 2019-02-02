@@ -5,6 +5,7 @@
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
 #include "UnrealNetwork.h"
+#include "GameFramework/GameStateBase.h"
 
 // Sets default values
 ACar::ACar()
@@ -58,7 +59,7 @@ void ACar::Tick(float DeltaTime)
 		Move.DeltaTime = DeltaTime;
 		Move.ForwardThrow = ForwardThrow;
 		Move.SteeringThrow = SteeringThrow;
-		Move.Time = GetWorld()->TimeSeconds;
+		Move.Time = GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
 		if (!HasAuthority())
 		{
@@ -122,10 +123,14 @@ void ACar::OnRep_ServerState()
 	Velocity = ServerState.Velocity;
 
 	ClearAcknowledgedMoves(ServerState.LastMove);
+	for (const FCarMove& Move : UnacknowledgedMoves)
+	{
+		SimulateMove(Move);
+	}
 	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
-void ACar::SimulateMove(FCarMove Move)
+void ACar::SimulateMove(const FCarMove& Move)
 {
 	float DeltaTime = Move.DeltaTime;
 

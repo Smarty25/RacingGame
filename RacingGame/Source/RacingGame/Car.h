@@ -67,7 +67,7 @@ private:
 
 	void CalculateVelocity(float DeltaTime, float ForwardThrow);
 
-	void SimulateMove(FCarMove Move);
+	void SimulateMove(const FCarMove& Move);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(FCarMove Move);
