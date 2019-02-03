@@ -64,11 +64,16 @@ void ACar::Tick(float DeltaTime)
 		if (!HasAuthority())
 		{
 			UnacknowledgedMoves.Add(Move);
+			SimulateMove(Move);
 			UE_LOG(LogTemp, Warning, TEXT("UnacknowledgedMoves Count = %d"), UnacknowledgedMoves.Num());
 		}
 
 		Server_SendMove(Move);
-		SimulateMove(Move);
+	}
+
+	if (Role == ROLE_SimulatedProxy)
+	{
+		SimulateMove(ServerState.LastMove);
 	}
 
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
