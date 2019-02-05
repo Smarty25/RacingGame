@@ -4,25 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "CarMovementComponent.h"
 #include "Car.generated.h"
-
-USTRUCT()
-struct FCarMove
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	float ForwardThrow;
-
-	UPROPERTY()
-	float SteeringThrow;
-
-	UPROPERTY()
-	float DeltaTime;
-
-	UPROPERTY()
-	float Time;
-};
 
 USTRUCT()
 struct FCarState
@@ -60,14 +43,8 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-
-	void CheckCollision(const FVector &NewLocation);
-
-	void CalculateRotation(float DeltaTime, float SteeringThrow);
-
-	void CalculateVelocity(float DeltaTime, float ForwardThrow);
-
-	void SimulateMove(const FCarMove& Move);
+	UPROPERTY(EditAnywhere)
+	class UCarMovementComponent* CarMovementComponent;
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(FCarMove Move);
@@ -75,35 +52,13 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
 	FCarState ServerState;
 
-	FVector Velocity;
-
 	void Client_MoveForward(float Value);
 	void Client_MoveRight(float Value);
 
 	UFUNCTION()
 	void OnRep_ServerState();
 
-	float ForwardThrow;
-
-	float SteeringThrow;
-
 	TArray<FCarMove> UnacknowledgedMoves;
 
 	void ClearAcknowledgedMoves(FCarMove Move);
-
-	//Car Properties
-	UPROPERTY(EditAnywhere)
-	float Mass = 1000;
-
-	UPROPERTY(EditAnywhere)
-	float AccelerationScalar = 10000;
-
-	UPROPERTY(EditAnywhere)
-	float DragCoefficient = 2;
-
-	UPROPERTY(EditAnywhere)
-	float FrictionCoefficient = .3;
-	
-	UPROPERTY(EditAnywhere)
-	float TurningRadius = 10;
 };
