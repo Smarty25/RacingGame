@@ -16,7 +16,6 @@ ACar::ACar()
 
 	CarMovementComponent = CreateDefaultSubobject<UCarMovementComponent>(TEXT("CarMovementComponent"));
 	CarReplicationComponent = CreateDefaultSubobject<UCarReplicationComponent>(TEXT("CarReplicationComponent"));
-	CarReplicationComponent->SetIsReplicated(true);
 }
 
 // Called when the game starts or when spawned

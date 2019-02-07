@@ -45,6 +45,8 @@ private:
 	UFUNCTION(Server, Reliable, WithValidation)
 		void Server_SendMove(FCarMove Move);
 
+	void UpdateServerState(FCarMove Move);
+
 	UFUNCTION()
 		void OnRep_ServerState();
 

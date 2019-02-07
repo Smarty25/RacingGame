@@ -32,7 +32,11 @@ void UCarMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	// ...
+	if (GetOwnerRole() == ROLE_AutonomousProxy || GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy)
+	{
+		LastMove = CreateMove(DeltaTime);
+		SimulateMove(LastMove);
+	}
 }
 
 FCarMove UCarMovementComponent::CreateMove(float DeltaTime)
@@ -84,24 +88,4 @@ void UCarMovementComponent::CheckCollision(const FVector &NewLocation)
 	FHitResult HitResult = FHitResult();
 	GetOwner()->AddActorWorldOffset(NewLocation, true, &HitResult);
 	if (HitResult.bBlockingHit) { Velocity = FVector(0); /*UE_LOG(LogTemp, Warning, TEXT("bBlockingHit is true"));*/ }
-}
-
-FVector UCarMovementComponent::GetVelocity()
-{
-	return Velocity;
-}
-
-void UCarMovementComponent::SetVelocity(FVector VelocityToSet)
-{
-	Velocity = VelocityToSet;
-}
-
-void UCarMovementComponent::SetForwardThrow(float Value)
-{
-	ForwardThrow = Value;
-}
-
-void UCarMovementComponent::SetSteeringThrow(float Value)
-{
-	SteeringThrow = Value;
 }

@@ -45,11 +45,13 @@ public:
 
 	void SimulateMove(const FCarMove& Move);
 
-	FVector GetVelocity();
-	void SetVelocity(FVector VelocityToSet);
+	FVector GetVelocity() { return Velocity; };
+	void SetVelocity(FVector VelocityToSet) { Velocity = VelocityToSet; };
 
-	void SetForwardThrow(float Value);
-	void SetSteeringThrow(float Value);
+	void SetForwardThrow(float Value) { ForwardThrow = Value; };
+	void SetSteeringThrow(float Value) { SteeringThrow = Value; };
+
+	FCarMove GetLastMove() { return LastMove; };
 
 private:
 	void CalculateVelocity(float DeltaTime, float ForwardThrow);
@@ -63,6 +65,8 @@ private:
 	float ForwardThrow;
 
 	float SteeringThrow;
+
+	FCarMove LastMove;
 
 	//Car Properties
 	UPROPERTY(EditAnywhere)

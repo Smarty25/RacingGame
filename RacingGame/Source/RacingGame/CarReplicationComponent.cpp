@@ -37,19 +37,18 @@ void UCarReplicationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
+	if (!CarMovementComponent) return;
+	FCarMove LastMove = CarMovementComponent->GetLastMove();
+
 	if (GetOwnerRole() == ROLE_AutonomousProxy)
 	{
-		FCarMove Move = CarMovementComponent->CreateMove(DeltaTime);
-		CarMovementComponent->SimulateMove(Move);
-		UnacknowledgedMoves.Add(Move);
-		Server_SendMove(Move);
-	
+		UnacknowledgedMoves.Add(LastMove);
+		Server_SendMove(LastMove);
 	}
 
 	if (GetOwnerRole() == ROLE_Authority && GetOwner()->GetRemoteRole() == ROLE_SimulatedProxy)
 	{
-		FCarMove Move = CarMovementComponent->CreateMove(DeltaTime);
-		Server_SendMove(Move);
+		UpdateServerState(LastMove);
 	}
 
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
@@ -75,6 +74,7 @@ void UCarReplicationComponent::ClearAcknowledgedMoves(FCarMove LastMove)
 
 void UCarReplicationComponent::OnRep_ServerState()
 {
+	if (!CarMovementComponent) return;
 	GetOwner()->SetActorTransform(ServerState.Transform);
 	CarMovementComponent->SetVelocity(ServerState.Velocity);
 
@@ -88,8 +88,15 @@ void UCarReplicationComponent::OnRep_ServerState()
 
 void UCarReplicationComponent::Server_SendMove_Implementation(FCarMove Move)
 {
+	if (!CarMovementComponent) return;
 	CarMovementComponent->SimulateMove(Move);
 
+	UpdateServerState(Move);
+}
+
+void UCarReplicationComponent::UpdateServerState(FCarMove Move)
+{
+	if (!CarMovementComponent) return;
 	ServerState.LastMove = Move;
 	ServerState.Transform = GetOwner()->GetActorTransform();
 	ServerState.Velocity = CarMovementComponent->GetVelocity();
