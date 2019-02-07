@@ -4,23 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-#include "CarMovementComponent.h"
+
+#include "CarReplicationComponent.h"
 #include "Car.generated.h"
-
-USTRUCT()
-struct FCarState
-{
-	GENERATED_USTRUCT_BODY()
-
-	UPROPERTY()
-	FCarMove LastMove;
-
-	UPROPERTY()
-	FTransform Transform;
-
-	UPROPERTY()
-	FVector Velocity;
-};
 
 UCLASS()
 class RACINGGAME_API ACar : public APawn
@@ -42,23 +28,14 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UCarMovementComponent* GetCarMovementComponent() { return CarMovementComponent; }
+
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	class UCarMovementComponent* CarMovementComponent;
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_SendMove(FCarMove Move);
-
-	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
-	FCarState ServerState;
+	UPROPERTY(VisibleAnywhere)
+	class UCarReplicationComponent* CarReplicationComponent;
 
 	void Client_MoveForward(float Value);
 	void Client_MoveRight(float Value);
-
-	UFUNCTION()
-	void OnRep_ServerState();
-
-	TArray<FCarMove> UnacknowledgedMoves;
-
-	void ClearAcknowledgedMoves(FCarMove Move);
 };

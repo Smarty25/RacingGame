@@ -5,7 +5,7 @@
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
 #include "DrawDebugHelpers.h"
-#include "UnrealNetwork.h"
+
 
 // Sets default values
 ACar::ACar()
@@ -15,6 +15,8 @@ ACar::ACar()
 	//bReplicates = true;
 
 	CarMovementComponent = CreateDefaultSubobject<UCarMovementComponent>(TEXT("CarMovementComponent"));
+	CarReplicationComponent = CreateDefaultSubobject<UCarReplicationComponent>(TEXT("CarReplicationComponent"));
+	CarReplicationComponent->SetIsReplicated(true);
 }
 
 // Called when the game starts or when spawned
@@ -22,15 +24,6 @@ void ACar::BeginPlay()
 {
 	Super::BeginPlay();
 	if (HasAuthority()) { NetUpdateFrequency = 1; }
-}
-
-void ACar::GetLifetimeReplicatedProps(TArray< FLifetimeProperty > & OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ACar, ServerState);
-	//DOREPLIFETIME(ACar, ForwardThrow);
-	//DOREPLIFETIME(ACar, SteeringThrow);
 }
 
 FString GetEnumText(ENetRole Role)
@@ -55,54 +48,7 @@ void ACar::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IsLocallyControlled())
-	{
-		FCarMove Move = CarMovementComponent->CreateMove(DeltaTime);
-
-		if (!HasAuthority())
-		{
-			UnacknowledgedMoves.Add(Move);
-			CarMovementComponent->SimulateMove(Move);
-			UE_LOG(LogTemp, Warning, TEXT("UnacknowledgedMoves Count = %d"), UnacknowledgedMoves.Num());
-		}
-
-		Server_SendMove(Move);
-	}
-
-	if (Role == ROLE_SimulatedProxy)
-	{
-		CarMovementComponent->SimulateMove(ServerState.LastMove);
-	}
-
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(Role), this, FColor::White, DeltaTime);
-}
-
-void ACar::ClearAcknowledgedMoves(FCarMove LastMove)
-{
-	TArray<FCarMove> NewMoves;
-
-	for (const FCarMove& Move : UnacknowledgedMoves)
-	{
-		if (Move.Time >= LastMove.Time)
-		{
-			NewMoves.Add(Move);
-		}
-	}
-
-	UnacknowledgedMoves = NewMoves;
-}
-
-void ACar::OnRep_ServerState()
-{
-	SetActorTransform(ServerState.Transform);
-	CarMovementComponent->SetVelocity(ServerState.Velocity);
-
-	ClearAcknowledgedMoves(ServerState.LastMove);
-	for (const FCarMove& Move : UnacknowledgedMoves)
-	{
-		CarMovementComponent->SimulateMove(Move);
-	}
-	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
 // Called to bind functionality to input
@@ -125,19 +71,4 @@ void ACar::Client_MoveRight(float Value)
 	//UE_LOG(LogTemp, Warning, TEXT("Client_MoveRight Value = %f"), Value);
 	Value = FMath::Clamp<float>(Value, -1, 1);
 	CarMovementComponent->SetSteeringThrow(Value);
-}
-
-void ACar::Server_SendMove_Implementation(FCarMove Move)
-{
-	CarMovementComponent->SimulateMove(Move);
-	
-	ServerState.LastMove = Move;
-	ServerState.Transform = GetActorTransform();
-	ServerState.Velocity = CarMovementComponent->GetVelocity();
-}
-
-bool ACar::Server_SendMove_Validate(FCarMove Move)
-{
-	//TODO validate move
-	return true;
 }
