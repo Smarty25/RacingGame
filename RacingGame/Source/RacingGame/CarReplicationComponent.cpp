@@ -53,8 +53,19 @@ void UCarReplicationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	if (GetOwnerRole() == ROLE_SimulatedProxy)
 	{
-		CarMovementComponent->SimulateMove(ServerState.LastMove);
+		ClientTick(DeltaTime);
 	}
+}
+
+void UCarReplicationComponent::ClientTick(float DeltaTime)
+{
+	ClientTimeSinceUpdate += DeltaTime;
+	if (ClientTimeSinceUpdate < KINDA_SMALL_NUMBER) return;
+
+	FVector TargetLocation = ServerState.Transform.GetLocation();
+	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenlastUpdates;
+	FVector NextLocation = FMath::LerpStable(ClientStartLocation, TargetLocation, LerpRatio);
+	GetOwner()->SetActorLocation(NextLocation);
 }
 
 void UCarReplicationComponent::ClearAcknowledgedMoves(FCarMove LastMove)
@@ -75,6 +86,31 @@ void UCarReplicationComponent::ClearAcknowledgedMoves(FCarMove LastMove)
 void UCarReplicationComponent::OnRep_ServerState()
 {
 	if (!CarMovementComponent) return;
+	
+	switch (GetOwnerRole())
+	{
+	default:
+		break;
+
+	case ROLE_AutonomousProxy:
+		AutonomousProxy_OnRep_ServerState();
+		break;
+
+	case ROLE_SimulatedProxy:
+		SimulatedProxy_OnRep_ServerState();
+		break;
+	}
+}
+
+void UCarReplicationComponent::SimulatedProxy_OnRep_ServerState()
+{
+	ClientTimeBetweenlastUpdates = ClientTimeSinceUpdate;
+	ClientTimeSinceUpdate = 0;
+	ClientStartLocation = GetOwner()->GetActorLocation();
+}
+
+void UCarReplicationComponent::AutonomousProxy_OnRep_ServerState()
+{
 	GetOwner()->SetActorTransform(ServerState.Transform);
 	CarMovementComponent->SetVelocity(ServerState.Velocity);
 
@@ -83,7 +119,6 @@ void UCarReplicationComponent::OnRep_ServerState()
 	{
 		CarMovementComponent->SimulateMove(Move);
 	}
-	//UE_LOG(LogTemp, Warning, TEXT("Replicated Transform"));
 }
 
 void UCarReplicationComponent::Server_SendMove_Implementation(FCarMove Move)

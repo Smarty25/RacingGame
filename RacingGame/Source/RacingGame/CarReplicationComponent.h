@@ -41,6 +41,12 @@ public:
 private:
 	UPROPERTY(ReplicatedUsing = OnRep_ServerState)
 		FCarState ServerState;
+
+	float ClientTimeSinceUpdate;
+	float ClientTimeBetweenlastUpdates;
+	FVector ClientStartLocation;
+
+	void ClientTick(float DeltaTime);
 	
 	UFUNCTION(Server, Reliable, WithValidation)
 		void Server_SendMove(FCarMove Move);
@@ -48,7 +54,9 @@ private:
 	void UpdateServerState(FCarMove Move);
 
 	UFUNCTION()
-		void OnRep_ServerState();
+	void OnRep_ServerState();
+	void SimulatedProxy_OnRep_ServerState();
+	void AutonomousProxy_OnRep_ServerState();
 
 	TArray<FCarMove> UnacknowledgedMoves;
 
