@@ -62,10 +62,16 @@ void UCarReplicationComponent::ClientTick(float DeltaTime)
 	ClientTimeSinceUpdate += DeltaTime;
 	if (ClientTimeSinceUpdate < KINDA_SMALL_NUMBER) return;
 
-	FVector TargetLocation = ServerState.Transform.GetLocation();
+	FTransform NextTransform;
 	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenlastUpdates;
-	FVector NextLocation = FMath::LerpStable(ClientStartLocation, TargetLocation, LerpRatio);
-	GetOwner()->SetActorLocation(NextLocation);
+
+	FVector TargetLocation = ServerState.Transform.GetLocation();
+	NextTransform.SetLocation(FMath::LerpStable(ClientStartTransform.GetLocation(), TargetLocation, LerpRatio));
+
+	FQuat TargetRotation = ServerState.Transform.GetRotation();
+	NextTransform.SetRotation(FQuat::Slerp(ClientStartTransform.GetRotation(), TargetRotation, LerpRatio));
+
+	GetOwner()->SetActorTransform(NextTransform);
 }
 
 void UCarReplicationComponent::ClearAcknowledgedMoves(FCarMove LastMove)
@@ -106,7 +112,7 @@ void UCarReplicationComponent::SimulatedProxy_OnRep_ServerState()
 {
 	ClientTimeBetweenlastUpdates = ClientTimeSinceUpdate;
 	ClientTimeSinceUpdate = 0;
-	ClientStartLocation = GetOwner()->GetActorLocation();
+	ClientStartTransform = GetOwner()->GetActorTransform();
 }
 
 void UCarReplicationComponent::AutonomousProxy_OnRep_ServerState()

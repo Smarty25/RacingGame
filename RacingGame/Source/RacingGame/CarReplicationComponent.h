@@ -44,7 +44,7 @@ private:
 
 	float ClientTimeSinceUpdate;
 	float ClientTimeBetweenlastUpdates;
-	FVector ClientStartLocation;
+	FTransform ClientStartTransform;
 
 	void ClientTick(float DeltaTime);
 	
