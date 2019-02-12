@@ -60,7 +60,7 @@ private:
 
 	void CheckCollision(const FVector &NewLocation);
 
-	FVector Velocity;
+	FVector Velocity = FVector(0);
 
 	float ForwardThrow;
 

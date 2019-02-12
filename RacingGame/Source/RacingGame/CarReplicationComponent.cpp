@@ -59,14 +59,23 @@ void UCarReplicationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UCarReplicationComponent::ClientTick(float DeltaTime)
 {
+	if (!CarMovementComponent) return;
+
 	ClientTimeSinceUpdate += DeltaTime;
-	if (ClientTimeSinceUpdate < KINDA_SMALL_NUMBER) return;
+	if (ClientTimeBetweenlastUpdates < KINDA_SMALL_NUMBER) return;
 
 	FTransform NextTransform;
 	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenlastUpdates;
 
+	FVector StartLocation = ClientStartTransform.GetLocation();
 	FVector TargetLocation = ServerState.Transform.GetLocation();
-	NextTransform.SetLocation(FMath::LerpStable(ClientStartTransform.GetLocation(), TargetLocation, LerpRatio));
+	FVector StartDerivative = ClientStartDerivative * ClientTimeBetweenlastUpdates * 100;
+	FVector TargetDerivative = ServerState.Velocity * ClientTimeBetweenlastUpdates * 100;
+
+	NextTransform.SetLocation(FMath::CubicInterp(StartLocation, ClientStartDerivative, TargetLocation, TargetDerivative, LerpRatio));
+	FVector NextDerivative = FMath::CubicInterpDerivative(StartLocation, ClientStartDerivative, TargetLocation, TargetDerivative, LerpRatio);
+	//UE_LOG(LogTemp, Warning, TEXT("NextDerivative = %s"), *NextDerivative.ToString());
+	CarMovementComponent->SetVelocity((NextDerivative / (ClientTimeBetweenlastUpdates * 100)));
 
 	FQuat TargetRotation = ServerState.Transform.GetRotation();
 	NextTransform.SetRotation(FQuat::Slerp(ClientStartTransform.GetRotation(), TargetRotation, LerpRatio));
@@ -113,11 +122,15 @@ void UCarReplicationComponent::SimulatedProxy_OnRep_ServerState()
 	ClientTimeBetweenlastUpdates = ClientTimeSinceUpdate;
 	ClientTimeSinceUpdate = 0;
 	ClientStartTransform = GetOwner()->GetActorTransform();
+	ClientStartDerivative = CarMovementComponent->GetVelocity();
+	//UE_LOG(LogTemp, Warning, TEXT("ClientStartDerivative = %s"), *ClientStartDerivative.ToString());
+
 }
 
 void UCarReplicationComponent::AutonomousProxy_OnRep_ServerState()
 {
 	GetOwner()->SetActorTransform(ServerState.Transform);
+	//UE_LOG(LogTemp, Warning, TEXT("ServerState.Velocity = %s"), *ServerState.Velocity.ToString());
 	CarMovementComponent->SetVelocity(ServerState.Velocity);
 
 	ClearAcknowledgedMoves(ServerState.LastMove);
