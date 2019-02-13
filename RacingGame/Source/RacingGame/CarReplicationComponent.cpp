@@ -59,28 +59,29 @@ void UCarReplicationComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 void UCarReplicationComponent::ClientTick(float DeltaTime)
 {
+	ClientTimeSinceUpdate += DeltaTime;
+
 	if (!CarMovementComponent) return;
 
-	ClientTimeSinceUpdate += DeltaTime;
 	if (ClientTimeBetweenlastUpdates < KINDA_SMALL_NUMBER) return;
 
 	FTransform NextTransform;
 	float LerpRatio = ClientTimeSinceUpdate / ClientTimeBetweenlastUpdates;
+	float VelocityToDerivative = ClientTimeBetweenlastUpdates * 100;
 
-	FVector StartLocation = ClientStartTransform.GetLocation();
-	FVector TargetLocation = ServerState.Transform.GetLocation();
-	FVector StartDerivative = ClientStartDerivative * ClientTimeBetweenlastUpdates * 100;
-	FVector TargetDerivative = ServerState.Velocity * ClientTimeBetweenlastUpdates * 100;
+	FCubicSpline Spline = FCubicSpline
+	(
+		ClientStartTransform.GetLocation(), 
+		ClientStartVelocity * VelocityToDerivative,
+		ServerState.Transform.GetLocation(), 
+		ServerState.Velocity * VelocityToDerivative
+	);
 
-	NextTransform.SetLocation(FMath::CubicInterp(StartLocation, ClientStartDerivative, TargetLocation, TargetDerivative, LerpRatio));
-	FVector NextDerivative = FMath::CubicInterpDerivative(StartLocation, ClientStartDerivative, TargetLocation, TargetDerivative, LerpRatio);
-	//UE_LOG(LogTemp, Warning, TEXT("NextDerivative = %s"), *NextDerivative.ToString());
-	CarMovementComponent->SetVelocity((NextDerivative / (ClientTimeBetweenlastUpdates * 100)));
-
-	FQuat TargetRotation = ServerState.Transform.GetRotation();
-	NextTransform.SetRotation(FQuat::Slerp(ClientStartTransform.GetRotation(), TargetRotation, LerpRatio));
-
+	NextTransform.SetLocation(Spline.InterpolateLocation(LerpRatio));
+	NextTransform.SetRotation(FQuat::Slerp(ClientStartTransform.GetRotation(), ServerState.Transform.GetRotation(), LerpRatio));
 	GetOwner()->SetActorTransform(NextTransform);
+
+	CarMovementComponent->SetVelocity(Spline.InterpolateDerivative(LerpRatio) / VelocityToDerivative);
 }
 
 void UCarReplicationComponent::ClearAcknowledgedMoves(FCarMove LastMove)
@@ -122,7 +123,7 @@ void UCarReplicationComponent::SimulatedProxy_OnRep_ServerState()
 	ClientTimeBetweenlastUpdates = ClientTimeSinceUpdate;
 	ClientTimeSinceUpdate = 0;
 	ClientStartTransform = GetOwner()->GetActorTransform();
-	ClientStartDerivative = CarMovementComponent->GetVelocity();
+	ClientStartVelocity = CarMovementComponent->GetVelocity();
 	//UE_LOG(LogTemp, Warning, TEXT("ClientStartDerivative = %s"), *ClientStartDerivative.ToString());
 
 }

@@ -23,7 +23,7 @@ ACar::ACar()
 void ACar::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority()) { NetUpdateFrequency = 1; }
+	if (HasAuthority()) { NetUpdateFrequency = 2; }
 }
 
 FString GetEnumText(ENetRole Role)

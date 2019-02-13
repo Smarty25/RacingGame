@@ -22,6 +22,31 @@ struct FCarState
 		FVector Velocity;
 };
 
+struct FCubicSpline
+{
+	FVector StartLocation;
+	FVector StartDerivative;
+	FVector TargetLocation;
+	FVector TargetDerivative;
+
+	FCubicSpline(FVector StartL, FVector StartD, FVector TargetL, FVector TargetD)
+	{
+		StartLocation = StartL;
+		StartDerivative = StartD;
+		TargetLocation = TargetL;
+		TargetDerivative = TargetD;
+	}
+
+	FVector InterpolateLocation(float LerpRatio)
+	{
+		return FMath::CubicInterp(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio);
+	}
+	FVector InterpolateDerivative(float LerpRatio)
+	{
+		return FMath::CubicInterpDerivative(StartLocation, StartDerivative, TargetLocation, TargetDerivative, LerpRatio);
+	}
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RACINGGAME_API UCarReplicationComponent : public UActorComponent
 {
@@ -45,7 +70,7 @@ private:
 	float ClientTimeSinceUpdate;
 	float ClientTimeBetweenlastUpdates;
 	FTransform ClientStartTransform;
-	FVector ClientStartDerivative;
+	FVector ClientStartVelocity;
 
 	void ClientTick(float DeltaTime);
 	
