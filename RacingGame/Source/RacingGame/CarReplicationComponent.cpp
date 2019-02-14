@@ -79,7 +79,8 @@ void UCarReplicationComponent::ClientTick(float DeltaTime)
 
 	NextTransform.SetLocation(Spline.InterpolateLocation(LerpRatio));
 	NextTransform.SetRotation(FQuat::Slerp(ClientStartTransform.GetRotation(), ServerState.Transform.GetRotation(), LerpRatio));
-	GetOwner()->SetActorTransform(NextTransform);
+	MeshOffsetRoot->SetWorldLocation(NextTransform.GetLocation());//GetOwner()->SetActorTransform(NextTransform);
+	MeshOffsetRoot->SetWorldRotation(NextTransform.GetRotation());
 
 	CarMovementComponent->SetVelocity(Spline.InterpolateDerivative(LerpRatio) / VelocityToDerivative);
 }
@@ -120,10 +121,14 @@ void UCarReplicationComponent::OnRep_ServerState()
 
 void UCarReplicationComponent::SimulatedProxy_OnRep_ServerState()
 {
+	if (!MeshOffsetRoot) return;
+
 	ClientTimeBetweenlastUpdates = ClientTimeSinceUpdate;
 	ClientTimeSinceUpdate = 0;
-	ClientStartTransform = GetOwner()->GetActorTransform();
+	ClientStartTransform.SetLocation(MeshOffsetRoot->GetComponentLocation()); //GetOwner()->GetActorTransform();
+	ClientStartTransform.SetRotation(MeshOffsetRoot->GetComponentQuat());
 	ClientStartVelocity = CarMovementComponent->GetVelocity();
+	GetOwner()->SetActorTransform(ServerState.Transform);
 	//UE_LOG(LogTemp, Warning, TEXT("ClientStartDerivative = %s"), *ClientStartDerivative.ToString());
 
 }

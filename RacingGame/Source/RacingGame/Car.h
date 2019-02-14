@@ -33,7 +33,7 @@ public:
 private:
 	UPROPERTY(VisibleAnywhere)
 	class UCarMovementComponent* CarMovementComponent;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCarReplicationComponent* CarReplicationComponent;
 
 	void Client_MoveForward(float Value);
